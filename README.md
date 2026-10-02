@@ -1,8 +1,7 @@
 # cap_tracking
 
 Tracks the edits needed to fix cell-type ontology mappings across HCA (Human
-Cell Atlas) datasets reviewed on CAP (Cell Annotation Platform), and makes
-sure none of them get missed.
+Cell Atlas) datasets reviewed on CAP (Cell Annotation Platform). 
 
 Each finding needs exactly one of:
 - a **manual edit on the CAP website** (no API exists for this — tracked by
@@ -116,32 +115,6 @@ just sync-tickets [ROW_ID] # check filed issues' real GitHub state + closing PR
   it done itself — only the curator can confirm the CAP edit actually
   happened.
 
-## GitHub token setup
-
-`post-ntr` needs a token to authenticate `gh issue create`. One-time setup:
-
-1. Generate a token at https://github.com/settings/tokens (classic —
-   `public_repo` scope is enough, since `cell-ontology` is public) or
-   https://github.com/settings/personal-access-tokens/new (fine-grained —
-   scope to `obophenotype/cell-ontology`, Issues: Read and write).
-2. Set it as `CAP_TRACKING_GH_TOKEN` — either in
-   `.claude/settings.local.json` (already gitignored, never committed):
-   ```json
-   { "env": { "CAP_TRACKING_GH_TOKEN": "ghp_..." } }
-   ```
-   or as an ambient shell env var for the session, if you'd rather it never
-   touch disk.
-
-No `gh auth login` needed — the token is passed into the `gh` subprocess's
-environment per-invocation, scoped to this one action.
-
-**Fine-grained tokens can fail here with `Resource not accessible by
-personal access token (createIssue)`** — this isn't a config mistake on your
-end; organizations (including `obophenotype`) can block fine-grained-PAT
-access entirely regardless of the permissions you grant, and as a
-non-member you can't approve it yourself. If you hit this, switch to a
-classic token with the `public_repo` scope instead — that's the mechanism
-this repo's own token actually uses.
 
 **Always `preview-ntr` before `post-ntr`.** Posting is a one-way action
 against a public, third-party repo.
