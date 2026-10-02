@@ -2,4 +2,6 @@
 __pycache__/
 *.pyc
 .venv/
-.DS_Store
+hca_ontology_findings.md
+hca_ontology_findings.csv
+2026_01_09_ols_report.csv
