@@ -17,6 +17,11 @@ else in this repo is tooling around it: a CLI for the mechanical parts
 (drafting, posting, status), and Claude Code skills for the judgment-call
 parts (writing a CL-style definition, cleaning up a proposed label).
 
+**Note:** `data/hca_ontology_findings.csv`, `data/hca_ontology_findings.md`,
+and `data/2026_01_09_ols_report.csv` are gitignored — they live locally and
+are not pushed to this repo's remote. The CLI/skills all still work against
+them unchanged; only their presence in the hosted repo is removed.
+
 ## Quickstart
 
 ```sh
@@ -74,6 +79,15 @@ just post-ntr PATH         # posts via `gh issue create`, requires CAP_TRACKING_
                             # → writes the issue URL back into github_ticket automatically
 ```
 
+Both `preview-ntr` and `post-ntr` run the draft body through
+`gh_post.unwrap_paragraphs()` first — GitHub renders a bare `\n` inside an
+issue as a literal `<br>`, so a paragraph hard-wrapped across multiple lines
+in the source `.md` (for editor readability) would otherwise render as a
+choppy forced-line-break column instead of flowing text. This reflows prose
+back into one line per paragraph while leaving bold field labels, bullet
+lists, and the closing `---` rule on their own lines. What you see in
+`preview-ntr`'s terminal output is exactly what gets posted.
+
 ### CAP website edits (`cap_comment` / `both` rows)
 
 ```sh
@@ -121,6 +135,14 @@ just sync-tickets [ROW_ID] # check filed issues' real GitHub state + closing PR
 No `gh auth login` needed — the token is passed into the `gh` subprocess's
 environment per-invocation, scoped to this one action.
 
+**Fine-grained tokens can fail here with `Resource not accessible by
+personal access token (createIssue)`** — this isn't a config mistake on your
+end; organizations (including `obophenotype`) can block fine-grained-PAT
+access entirely regardless of the permissions you grant, and as a
+non-member you can't approve it yourself. If you hit this, switch to a
+classic token with the `public_repo` scope instead — that's the mechanism
+this repo's own token actually uses.
+
 **Always `preview-ntr` before `post-ntr`.** Posting is a one-way action
 against a public, third-party repo.
 
@@ -136,8 +158,10 @@ repo's `post-ntr` captures the created issue's URL and writes it back into
 ## Layout
 
 ```
-data/hca_ontology_findings.csv   # source of truth
+data/hca_ontology_findings.csv   # source of truth (gitignored, local-only)
 src/cap_tracking/                # CLI + renderers (see cli.py for commands)
+  gh_post.py                       # drafts -> gh issue create, URL capture, paragraph reflow
+  gh_sync.py                       # read-only: real issue state + closing PR, via gh api graphql
 reports/{atlas}/
   cl_term_requests/{row_id}_ntr.md       # generated NTR drafts
   cap_edit_notes/{row_id}_cap_note.md    # generated CAP edit checklists
