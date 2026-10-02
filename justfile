@@ -30,6 +30,12 @@ mark-cap-done ROW_ID:
 sync-tickets ROW_ID="":
     uv run python -m cap_tracking sync-tickets {{ROW_ID}}
 
+# Generate a formatted .xlsx review copy: Excel Table, bold frozen header,
+# columns sized to content, rows font-colored by completion status
+# (green=done, amber=in progress, red=untouched, grey=skip/blocked).
+export-xlsx OUT="data/hca_ontology_findings_review.xlsx":
+    uv run python -m cap_tracking export-xlsx {{OUT}}
+
 # Audit
 status:
     uv run python -m cap_tracking status

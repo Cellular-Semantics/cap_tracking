@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from cap_tracking import cap_note, csv_store, gh_post, gh_sync, ntr_render
+from cap_tracking import cap_note, csv_store, gh_post, gh_sync, ntr_render, xlsx_export
 from cap_tracking.schema import CAP_ROUTES, GITHUB_ROUTES
 from cap_tracking.status import StatusReport, build_status_report, format_report
 
@@ -121,6 +121,13 @@ def cmd_sync_tickets(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_export_xlsx(args: argparse.Namespace) -> int:
+    rows = csv_store.load_rows()
+    xlsx_export.export_xlsx(rows, args.out_path)
+    print(f"Wrote {args.out_path} ({len(rows)} rows)")
+    return 0
+
+
 _ROUTE_FILTER_ATTR = {
     "done": "done",
     "outstanding": "outstanding",
@@ -182,6 +189,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("row_id", nargs="?", default=None, help="Sync just this row (default: all filed).")
     p.set_defaults(func=cmd_sync_tickets)
+
+    p = sub.add_parser(
+        "export-xlsx",
+        help="Generate a formatted .xlsx review copy (table, frozen bold header, color-coded rows).",
+    )
+    p.add_argument(
+        "out_path",
+        type=Path,
+        nargs="?",
+        default=Path("data/hca_ontology_findings_review.xlsx"),
+    )
+    p.set_defaults(func=cmd_export_xlsx)
 
     p = sub.add_parser("status", help="Audit report: every row in exactly one bucket.")
     p.add_argument(

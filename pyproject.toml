@@ -7,7 +7,9 @@ name = "cap_tracking"
 version = "0.1.0"
 description = "Tracker for CAP ontology-mapping findings: CAP-website edits and Cell Ontology NTR issues."
 requires-python = ">=3.12,<4.0"
-dependencies = []
+dependencies = [
+  "openpyxl>=3.1",
+]
 
 [dependency-groups]
 dev = [
