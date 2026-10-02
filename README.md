@@ -49,6 +49,9 @@ the `uv run` form directly.
   meaningful for `cap_comment`/`both` rows).
 - **`github_ticket`** — filled automatically with the created issue's URL
   once `post-ntr` succeeds.
+- **`github_issue_state`** / **`closing_pr`** — GitHub's own issue state
+  (`open`/`closed`) and, once resolved, the PR that closed it. Kept up to
+  date by `just sync-tickets` (read-only — never posts anything).
 
 `dataset_ids`, `n_cells`, and `label` are always treated as opaque display
 strings — several rows have irregular delimiters or describe a group of
@@ -84,6 +87,7 @@ just mark-cap-done ROW_ID  # comment_status -> done
 ```sh
 just status                # full audit, all rows accounted for
 just status-outstanding    # only what's still actionable
+just sync-tickets [ROW_ID] # check filed issues' real GitHub state + closing PR
 ```
 
 ## Claude Code skills (`.claude/skills/`)

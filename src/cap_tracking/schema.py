@@ -25,7 +25,12 @@ FIELDNAMES = [
     "section_ref",
     "notes",
     "github_ticket",
+    "github_issue_state",
+    "closing_pr",
 ]
+
+# GitHub's own issue state, distinct from our github_issue_status lifecycle.
+GITHUB_ISSUE_STATE = {"", "open", "closed"}
 
 ACTION_ROUTES = {"cap_comment", "skip", "github_issue", "blocked", "both"}
 

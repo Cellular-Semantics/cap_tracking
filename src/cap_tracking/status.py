@@ -54,16 +54,26 @@ def build_status_report(rows: list[dict]) -> StatusReport:
     return report
 
 
+def _github_suffix(row: dict) -> str:
+    state = row.get("github_issue_state")
+    if not state:
+        return ""
+    suffix = f"  [github:{state}]"
+    if row.get("closing_pr"):
+        suffix += f"  closed_by={row['closing_pr']}"
+    return suffix
+
+
 def _route_state(row: dict) -> str:
     route = row.get("action_route")
     if route == "both":
         gh = "filed" if _github_complete(row) else (row.get("github_issue_status") or "not_started")
         cap = "done" if _cap_complete(row) else (row.get("comment_status") or "not_started")
-        return f"both: github={gh}, cap={cap}"
+        return f"both: github={gh}, cap={cap}{_github_suffix(row)}"
     if route == "github_issue":
         status = row.get("github_issue_status") or "not_started"
         ticket = row.get("github_ticket") or "(none)"
-        return f"github_issue  status={status}  ticket={ticket}"
+        return f"github_issue  status={status}  ticket={ticket}{_github_suffix(row)}"
     if route == "cap_comment":
         status = row.get("comment_status") or "not_started"
         return f"cap_comment   status={status}"
@@ -77,6 +87,11 @@ def format_report(report: StatusReport, total: int) -> str:
     lines.append(f"OUTSTANDING (action pending) : {len(report.outstanding)} / {total}")
     lines.append(f"NO ACTION (skip)             : {len(report.no_action)} / {total}")
     lines.append(f"NEEDS DECISION (blocked)     : {len(report.needs_decision)} / {total}")
+
+    if report.done:
+        lines.append("\n--- DONE ---")
+        for row in report.done:
+            lines.append(f"[{row.get('row_id')}] {_route_state(row)}")
 
     if report.outstanding:
         lines.append("\n--- OUTSTANDING ---")

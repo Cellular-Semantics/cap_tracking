@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from cap_tracking import cap_note, csv_store, gh_post, ntr_render
+from cap_tracking import cap_note, csv_store, gh_post, gh_sync, ntr_render
 from cap_tracking.schema import CAP_ROUTES, GITHUB_ROUTES
 from cap_tracking.status import StatusReport, build_status_report, format_report
 
@@ -91,6 +91,36 @@ def cmd_mark_cap_done(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sync_tickets(args: argparse.Namespace) -> int:
+    rows = csv_store.load_rows()
+    targets = [r for r in rows if r.get("github_ticket")]
+    if args.row_id:
+        targets = [r for r in targets if r["row_id"] == args.row_id]
+        if not targets:
+            print(f"ERROR: no row with row_id={args.row_id!r} and a github_ticket set.", file=sys.stderr)
+            return 1
+
+    changed = 0
+    for row in targets:
+        result = gh_sync.fetch_issue_state(row["github_ticket"])
+        if not result:
+            continue
+        if (
+            row.get("github_issue_state") != result["github_issue_state"]
+            or row.get("closing_pr") != result["closing_pr"]
+        ):
+            csv_store.update_row(rows, row["row_id"], **result)
+            changed += 1
+        state = result["github_issue_state"]
+        pr = f"  closing_pr={result['closing_pr']}" if result["closing_pr"] else ""
+        print(f"{row['row_id']}: {state}{pr}")
+
+    if changed:
+        csv_store.save_rows(rows)
+    print(f"\nChecked {len(targets)} ticket(s), updated {changed}.")
+    return 0
+
+
 _ROUTE_FILTER_ATTR = {
     "done": "done",
     "outstanding": "outstanding",
@@ -145,6 +175,13 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("mark-cap-done", help="Mark a row's manual CAP edit as done.")
     p.add_argument("row_id")
     p.set_defaults(func=cmd_mark_cap_done)
+
+    p = sub.add_parser(
+        "sync-tickets",
+        help="Read-only: check filed issues' real GitHub state and closing PR.",
+    )
+    p.add_argument("row_id", nargs="?", default=None, help="Sync just this row (default: all filed).")
+    p.set_defaults(func=cmd_sync_tickets)
 
     p = sub.add_parser("status", help="Audit report: every row in exactly one bucket.")
     p.add_argument(

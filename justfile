@@ -25,6 +25,11 @@ gen-cap-note ROW_ID:
 mark-cap-done ROW_ID:
     uv run python -m cap_tracking mark-cap-done {{ROW_ID}}
 
+# Check filed issues' real GitHub state (open/closed) and any closing PR.
+# Read-only. Omit ROW_ID to check every row with a github_ticket set.
+sync-tickets ROW_ID="":
+    uv run python -m cap_tracking sync-tickets {{ROW_ID}}
+
 # Audit
 status:
     uv run python -m cap_tracking status

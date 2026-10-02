@@ -14,7 +14,10 @@ trust, and gives the curator a current picture.
 1. Run `just assign-ids`. Idempotent — only fills blank `row_id` cells, never
    touches existing ones (so filenames already generated under `reports/`
    never go stale).
-2. Load `data/hca_ontology_findings.csv` and validate:
+2. Run `just sync-tickets`. Read-only — refreshes `github_issue_state` and
+   `closing_pr` for every already-filed issue, so `status` reflects whether
+   CL maintainers have actually resolved it, not just that we filed it.
+3. Load `data/hca_ontology_findings.csv` and validate:
    - Every `action_route` is one of `cap_comment`, `skip`, `github_issue`,
      `blocked`, `both` (see `src/cap_tracking/schema.py:ACTION_ROUTES`).
    - Every `github_issue_status` is one of `""`, `not_started`, `drafted`,
@@ -26,7 +29,7 @@ trust, and gives the curator a current picture.
      `cap_comment`-only rows. Flag (don't silently fix) any row that breaks
      this — it likely means `action_route` was hand-edited without updating
      the status columns.
-3. Run `just status` and show the curator the full report — this is also
+4. Run `just status` and show the curator the full report — this is also
    exactly what `just status` prints on its own, so this step is mostly
    "run it and make sure nothing in the DATA INTEGRITY WARNINGS section is
    new since last time."
