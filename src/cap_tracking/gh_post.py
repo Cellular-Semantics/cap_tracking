@@ -34,6 +34,54 @@ _ISSUE_URL_RE = re.compile(
 )
 
 
+_THEMATIC_BREAK_RE = re.compile(r"^(-{3,}|\*{3,}|_{3,})$")
+
+
+def unwrap_paragraphs(text: str) -> str:
+    """Collapse hard-wrapped prose into single flowing lines.
+
+    GitHub renders a bare `\\n` inside an issue body as a literal `<br>`
+    (unlike CommonMark's soft-break-as-space), so a paragraph manually
+    wrapped across multiple lines for source-file readability renders as a
+    choppy column of forced short lines instead of flowing text.
+
+    Only multi-line *prose* bodies get reflowed. Left untouched: blank lines
+    (block boundaries), `**bold label**` lines (kept on their own line, same
+    as the template's label-then-answer layout), bullet list items (one line
+    each), and standalone thematic-break lines (`---`) — joining any of
+    these into the surrounding text would change the rendered structure, not
+    just the wrapping.
+    """
+    output: list[str] = []
+    buffer: list[str] = []
+
+    def flush() -> None:
+        if not buffer:
+            return
+        if all(line.lstrip().startswith("- ") for line in buffer):
+            output.extend(buffer)
+        else:
+            output.append(" ".join(line.strip() for line in buffer))
+        buffer.clear()
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            flush()
+            output.append("")
+        elif _THEMATIC_BREAK_RE.match(stripped):
+            flush()
+            output.append(line)
+        elif stripped.startswith("**"):
+            flush()
+            output.append(line)
+        else:
+            buffer.append(line)
+    flush()
+
+    return "\n".join(output)
+
+
 def split_title_body(md_text: str) -> tuple[str, str]:
     """
     First top-level `# Title` line becomes the issue title (without the `# `).
@@ -60,6 +108,7 @@ def post(ntr_path: Path, confirm: bool) -> tuple[int, str | None]:
         return 2, None
 
     title, body = split_title_body(ntr_path.read_text())
+    body = unwrap_paragraphs(body)
 
     print(f"Repo:   {CL_REPO}")
     print(f"Label:  {ISSUE_LABEL}")
